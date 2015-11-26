@@ -1,0 +1,67 @@
+#!/bin/bash
+
+#
+# parse-maildir
+#
+# Copyright (c) 2009 Evolix - Tous droits reserves
+# 
+# $Id: index.php 310 2009-10-19 16:04:34Z tmartin $
+# vim: expandtab softtabstop=4 tabstop=4 shiftwidth=4 showtabline=2
+#
+# @author Thomas Martin <tmartin@evolix.fr>
+# @author Sebastien Palma <spalma@evolix.fr>
+# @version 0.1
+#
+
+SCRIPT_START=`date '+%Y-%m-%d %H:%M:%S'`
+
+TOTAL_BOUNCES=0
+
+# Test the parameters presence
+if [ "$#" -lt 1 ]; then
+  echo "Usage of $0:"
+  echo "$0 {maildir} {database}"
+  exit 9;
+fi
+
+
+MAILDIR=`echo $1 | cut -d"/" -f5`
+
+STOCK_DIR=`date '+%Y%m%d'`
+
+
+if [ ! -d "$1/.$STOCK_DIR" ]; then
+    mkdir -p $1/.$STOCK_DIR/{tmp,cur,new}
+fi
+
+
+for mail in `ls $1/new/`
+do
+    cat $1/new/$mail | ./parse-mail $MAILDIR
+    mv $1/new/$mail $1/.$STOCK_DIR/new/
+    ((TOTAL_BOUNCES=$TOTAL_BOUNCES+1))
+done
+
+
+for mail in `ls $1/cur/`
+do
+    cat $1/cur/$mail | ./parse-mail $MAILDIR
+    mv $1/cur/$mail $1/.$STOCK_DIR/cur/
+    ((TOTAL_BOUNCES=$TOTAL_BOUNCES+1))
+done
+
+SCRIPT_END=`date '+%Y-%m-%d %H:%M:%S'`
+
+#if [ "$1" = "/home/vmail/example.com/no-reply" ]; then
+
+cat <<EOT | mail -s "Traitement des bounces" notification@example.com
+Traitement des bounces sur la boîte $1
+
+Début du traitement : $SCRIPT_START
+
+Total bounces : $TOTAL_BOUNCES
+
+Fin de traitement : $SCRIPT_END
+EOT
+
+#fi

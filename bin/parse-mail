@@ -1,0 +1,45 @@
+#!/usr/bin/php
+<?php
+
+/**
+ * parse-mail
+ *
+ * Copyright (c) 2009 Evolix - Tous droits reserves
+ * 
+ * $Id: index.php 310 2009-10-19 16:04:34Z tmartin $
+ * vim: expandtab softtabstop=4 tabstop=4 shiftwidth=4 showtabline=2
+ *
+ * @author Thomas Martin <tmartin@evolix.fr>
+ * @author Sebastien Palma <spalma@evolix.fr>
+ * @version 0.1
+ */
+
+require_once('../config/config.php');
+require_once('../lib/parser.php');
+require_once('../lib/storage.php');
+
+$args = $_SERVER['argv'];
+
+$mailbox = $args[1];
+
+$stdin = fopen('php://stdin', 'r');
+$content = '';
+while($line = fread($stdin, 1024)) {
+    $content .= $line;
+}
+
+$bounce = new bounceParser($content);
+$bounce->parse();
+
+if ($bounce->getErrorCode()) {
+    $dbstore = new databaseStorage();
+    $dbstore->store_in_db($bounce, $mailbox);
+}
+
+
+//if ($bounce->getErrorCode()) print($bounce->getErrorCode().'|'.$bounce->getBouncedEmail().'|'.$bounce->getBounceReason()."|".$bounce->getServerAnswer()."\n");
+//print($bounce->getErrorCode().'|'.$bounce->getBouncedEmail().'|'.$bounce->getBounceReason()."|".$bounce->getServerAnswer()."\n");
+
+//exit($bounce->getStatus());
+
+?>
